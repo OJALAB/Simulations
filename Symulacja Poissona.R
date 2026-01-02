@@ -12,8 +12,39 @@ l_poiss = function(y, d, gamma, intercept, alfa, q, omega, p){#y - liczba, d - l
 opt = function(wektor, y, d, q, omega, p){
   return(-l_poiss(y=y, d=d, gamma=wektor[1:9], intercept=wektor[10], alfa=wektor[11], q=q, omega=omega, p=p))
 }
+opt2= function(wektor, y, d, q, omega){
+  gamma=wektor[1:9]
+  intercept=wektor[10]
+  alfa=wektor[11]
+  p=wektor[12:20]
+  p=exp(c(p, 0))
+  p=p/sum(p)
+  return(-l_poiss(y, d, gamma, intercept, alfa, q, omega, p))
+}
+
+gamma=runif(10, 1, 2)
+alfa=runif(1, -0.5, 0.5)
+p=c(0.25, 0.2, 0.15, 0.05, 0.05, 0.1, 0.02, 0.03, 0.05, 0.1)
+pomylki=diag(10)*70+matrix(rpois(100, 3), nrow=10)
+pomylki = sweep(pomylki, MARGIN = 2, STATS = colSums(pomylki), FUN = '/')
+q=rbinom(1000, 1, 0.7)
+thety=sample(1:10, size=1000, replace = T, prob = p)
+y=rpois(1000, exp(gamma[thety]+alfa*q))
+d=sapply(1:1000, function(x){sample(1:10, size = 1, prob = pomylki[, thety[x]])})
+fit=optimx(par=c(numeric(9), log(mean(y)), numeric(10)), fn=opt2, y=y, d=d, q=q, omega=pomylki, method = "BFGS")
+wyniki=as.numeric(fit[1, 1:11])
+wyniki[1:9]=wyniki[1:9]+wyniki[10]
+sum((c(gamma, alfa)-wyniki)^2)
+prob=as.numeric(fit[12:20])
+prob=exp(c(prob, 0))
+prob=prob/sum(prob)
+for(i in 1:10){
+  print(sum(thety==i)/1000-prob[i])
+}
+
 
 bledy_1000=numeric(25)
+bledy2_1000=numeric(25)
 bledy_uproszczone_1000=numeric(25)
 for(i in 1:25){
   gamma=runif(10, 1, 2)
@@ -29,8 +60,12 @@ for(i in 1:25){
   fit=optimx(par=c(numeric(9), log(mean(y)), 0), fn=opt, y=y, d=d, q=q, omega=pomylki, p=p, method = "BFGS")
   wyniki=as.numeric(fit[1, 1:11])
   wyniki[1:9]=wyniki[1:9]+wyniki[10]
-  wyniki
   bledy_1000[i]=sum((c(gamma, alfa)-wyniki)^2)
+  
+  fit2=optimx(par=c(numeric(9), log(mean(y)), numeric(10)), fn=opt2, y=y, d=d, q=q, omega=pomylki, method = "BFGS")
+  wyniki2=as.numeric(fit2[1, 1:11])
+  wyniki2[1:9]=wyniki2[1:9]+wyniki2[10]
+  bledy2_1000[i]=sum((c(gamma, alfa)-wyniki2)^2)
 
   model_naiwny = glm(y ~ as.factor(d) + q, family = "poisson")
   glm_wyniki=coef(model_naiwny)
@@ -38,10 +73,12 @@ for(i in 1:25){
   bledy_uproszczone_1000[i]=sum((c(gamma, alfa)-glm_wyniki)^2)
 }
 mean(bledy_1000)
+mean(bledy2_1000)
 mean(bledy_uproszczone_1000)
 
 bledy_5000=numeric(25)
 bledy_uproszczone_5000=numeric(25)
+bledy2_5000=numeric(25)
 for(i in 1:25){
   gamma=runif(10, 1, 3)
   alfa=runif(1, -0.5, 0.5)
@@ -59,6 +96,11 @@ for(i in 1:25){
   wyniki=as.numeric(fit[1, 1:11])
   wyniki[1:9]=wyniki[1:9]+wyniki[10]
   bledy_5000[i]=sum((c(gamma, alfa)-wyniki)^2)
+  
+  fit2=optimx(par=c(numeric(9), log(mean(y)), numeric(10)), fn=opt2, y=y, d=d, q=q, omega=pomylki, method = "BFGS")
+  wyniki2=as.numeric(fit2[1, 1:11])
+  wyniki2[1:9]=wyniki2[1:9]+wyniki2[10]
+  bledy2_5000[i]=sum((c(gamma, alfa)-wyniki2)^2)
 
   model_naiwny = glm(y ~ as.factor(d) + q, family = "poisson")
   glm_wyniki=coef(model_naiwny)
@@ -66,10 +108,16 @@ for(i in 1:25){
   bledy_uproszczone_5000[i]=sum((c(gamma, alfa)-glm_wyniki)^2)
 }
 mean(bledy_5000)
+mean(bledy2_5000)
 mean(bledy_uproszczone_5000)
 
-wynik=data.frame(bledy_1000=bledy_1000, bledy_uproszczone_1000=bledy_uproszczone_1000, bledy_5000=bledy_5000, bledy_uproszczone_5000=bledy_uproszczone_5000)
+wynik=data.frame(c1=bledy_1000, c2=bledy2_1000, c3=bledy_uproszczone_1000, c4=bledy_5000, c5=bledy2_5000, c6=bledy_uproszczone_5000)
 wynik=rbind(wynik, colMeans(wynik))
-rownames(wynik)[26]='Średni błąd'
-colnames(wynik)=c('1000 obserwacji z korektą', '1000 obserwacji bez korekty', '5000 obserwacji z korektą', '5000 obserwacji bez korekty')
+rownames(wynik)[26]='Mean Error'
+colnames(wynik)=c('Joint estimation 1000 observations',
+                  'Joint esitmation 1000 observations with unknown probabilities',
+                  'Standard GLM 1000 observations',
+                  'Joint estimation 5000 observations',
+                  'Joint esitmation 5000 observations with unknown probabilities',
+                  'Standard GLM 5000 observations')
 save(wynik, file = "Wyniki symulacji.RData")
