@@ -22,27 +22,6 @@ opt2= function(wektor, y, d, q, omega){
   return(-l_poiss(y, d, gamma, intercept, alfa, q, omega, p))
 }
 
-gamma=runif(10, 1, 2)
-alfa=runif(1, -0.5, 0.5)
-p=c(0.25, 0.2, 0.15, 0.05, 0.05, 0.1, 0.02, 0.03, 0.05, 0.1)
-pomylki=diag(10)*70+matrix(rpois(100, 3), nrow=10)
-pomylki = sweep(pomylki, MARGIN = 2, STATS = colSums(pomylki), FUN = '/')
-q=rbinom(1000, 1, 0.7)
-thety=sample(1:10, size=1000, replace = T, prob = p)
-y=rpois(1000, exp(gamma[thety]+alfa*q))
-d=sapply(1:1000, function(x){sample(1:10, size = 1, prob = pomylki[, thety[x]])})
-fit=optimx(par=c(numeric(9), log(mean(y)), numeric(10)), fn=opt2, y=y, d=d, q=q, omega=pomylki, method = "BFGS")
-wyniki=as.numeric(fit[1, 1:11])
-wyniki[1:9]=wyniki[1:9]+wyniki[10]
-sum((c(gamma, alfa)-wyniki)^2)
-prob=as.numeric(fit[12:20])
-prob=exp(c(prob, 0))
-prob=prob/sum(prob)
-for(i in 1:10){
-  print(sum(thety==i)/1000-prob[i])
-}
-
-
 bledy_1000=numeric(25)
 bledy2_1000=numeric(25)
 bledy_uproszczone_1000=numeric(25)
@@ -121,3 +100,5 @@ colnames(wynik)=c('Joint estimation 1000 observations',
                   'Joint esitmation 5000 observations with unknown probabilities',
                   'Standard GLM 5000 observations')
 save(wynik, file = "Wyniki symulacji.RData")
+
+stargazer::stargazer(as.data.frame(wynik), summary.stat = c("mean", "median", "sd", "min", "max"), type='latex', title = "Results", digits=4, flip=T)
