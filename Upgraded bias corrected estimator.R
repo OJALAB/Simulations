@@ -1,15 +1,15 @@
 library(MLBC)
 set.seed(2025)
-N <- 100000
+N <- 10000
 n_audit <- 1000
-n_sim = 100
+n_sim = 500
 error_precise=error_naive=error_bca_naive=error_bca=matrix(0, n_sim, 3)
 colnames(error_precise)=colnames(error_naive)=colnames(error_bca_naive)=colnames(error_bca)=c('z', 'Intercept', 'x')
 for(i in 1:n_sim){
   x <- rnorm(N, 2, 1)
   z <- rbinom(N, 1, 0.7)
   z_star <- z
-  z_star[z == 1] <- sample(c(0,1), size = NROW(z_star[z == 1]), prob = c(0.10, 0.90), replace = T)
+  z_star[z == 1] <- sample(c(0,1), size = NROW(z_star[z == 1]), prob = c(0.07, 0.93), replace = T)
   z_star[z == 0] <- sample(c(0,1), size = NROW(z_star[z == 0]), prob = c(0.93, 0.07), replace = T)
   e <- rnorm(N)
   y <- 1 + x - 2*z + e
@@ -41,5 +41,8 @@ sse_naive=apply(error_naive, 1, function(x) sum(x^2))
 sse_precise=apply(error_precise, 1, function(x) sum(x^2))
 
 results= as.data.frame(cbind(sse_precise, sse_naive, sse_bca_naive, sse_bca))
-save(results, error_bca, error_bca_naive, error_naive, error_precise, file = "Results.RData")
-stargazer::stargazer(results, type='latex', title = "Results", label = "tab:summary", flip=T)
+#save(results, error_bca, error_bca_naive, error_naive, error_precise, file = "Results.RData")
+#head(results)
+#stargazer::stargazer(results, type='latex', title = "Results", flip=T)
+colMeans(error_bca_naive)
+colMeans(error_bca)
