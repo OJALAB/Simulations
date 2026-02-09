@@ -7,14 +7,19 @@ n_audit = 1000
 nonprob_ratio = 0.7
 biases = matrix(0, n_sim, 8)
 colnames(biases) = c('gold', 'mass_imp', 'mass_impnaive', 'bca', 'bca_upgr', 'bcm', 'bcm_upgr', 'joint')
+
+coefs_naive = coefs_bca_upgraded = coefs_bca = matrix(0, n_sim, 3)
+colnames(coefs_naive) = colnames(coefs_bca) = colnames(coefs_bca_upgraded) = c('Intercept', 'x', 'z')
+
+
 for(i in 1:n_sim){
   x = rnorm(N, 2, 1)
   z = rbinom(N, 1, 0.7)
   z_star = z
-  z_star[z == 1] = sample(c(0,1), size = NROW(z_star[z == 1]), prob = c(0.17, 0.83), replace = T)
-  z_star[z == 0] = sample(c(0,1), size = NROW(z_star[z == 0]), prob = c(0.88, 0.12), replace = T)
+  z_star[z == 1] = sample(c(0,1), size = NROW(z_star[z == 1]), prob = c(0.1, 0.9), replace = T)
+  z_star[z == 0] = sample(c(0,1), size = NROW(z_star[z == 0]), prob = c(0.93, 0.07), replace = T)
   e = rnorm(N)
-  y = 3 + x - 2*z + e
+  y = 1 + x - 2*z + e
   y_mean = mean(y)
   
   pop_data = data.frame(x, z, z_star, y)
@@ -43,6 +48,7 @@ for(i in 1:n_sim){
   y_pred_mass_imputation_naive = mass_imputation_naive_coefs[1]+mass_imputation_naive_coefs[2]*prob_sample[['x']]+mass_imputation_naive_coefs[3]*prob_sample[['z']]
   bias_mass_imputation_naive = mean(y_pred_mass_imputation_naive) - y_mean
   biases[i, 3] = bias_mass_imputation_naive
+  coefs_naive[i, ] = mass_imputation_naive_coefs
   
   #estimate false positive rate on an audit sample
   s_audit = pop_data[sample(1:nrow(pop_data), n_audit),]
@@ -56,6 +62,7 @@ for(i in 1:n_sim){
   y_pred_bca_classic = bca_classic_coef[3]+bca_classic_coef[2]*prob_sample[['x']]+bca_classic_coef[1]*prob_sample[['z']]
   bias_bca_classic = mean(y_pred_bca_classic)-y_mean
   biases[i, 4] = bias_bca_classic
+  coefs_bca[i, ] = rev(bca_classic_coef)
   
   mass_imputation_coefs
   bca_classic_coef
@@ -67,6 +74,7 @@ for(i in 1:n_sim){
   y_pred_bca_upgraded = bca_upgraded[2]+bca_upgraded[3]*prob_sample[['x']]+bca_upgraded[1]*prob_sample[['z']]
   bias_bca_upgraded = mean(y_pred_bca_upgraded) - y_mean
   biases[i, 5] = bias_bca_upgraded
+  coefs_bca_upgraded[i, ] = bca_upgraded[c(2, 3, 1)]
   
   #bcm estimator - corrects measurement error using asymptotical behavior of inverse matrices
   bcm = MLBC::ols_bcm(y ~ z_star + x, data = nonprob_sample, fpr = fpr, m = n_audit)
@@ -94,3 +102,10 @@ results=as.data.frame(rbind(results_biases, results_mse))
 results
 
 #stargazer::stargazer(rbind(results_biases, results_mse), type='latex', digits=4, title = "Results", label = "tab:summary", flip=T)
+
+# coef_true = matrix(rep(c(1, 1, -2), n_sim), nrow=n_sim, byrow = T)
+# View(coefs_bca - coef_true)
+# View(coefs_naive - coef_true)
+# View(coefs_bca-coefs_naive) 
+# View(coefs_bca)
+# View(coefs_naive)

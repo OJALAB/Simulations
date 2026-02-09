@@ -66,6 +66,6 @@ wynik_bc=as.data.frame(c(wynik_1000, wynik_10000, wynik_100000))
 colnames(wynik_bc)=c('bca1000', 'bcm1000', 'naive1000', 'bca10000', 'bcm10000', 'naive10000', 'bca100000', 'bcm100000', 'naive100000')
 wynik_bc=rbind(wynik_bc, colMeans(wynik_bc))
 rownames(wynik_bc)[51]='Mean Error'
-save(wynik_bc, file = "Bias corrected estimators results.RData")
+save(wynik_bc, file = "Results/Bias corrected estimators results.RData")
 
-stargazer::stargazer(wynik_bc, type='latex', title = "Results", label = "tab:summary", flip=T)
+#stargazer::stargazer(wynik_bc, type='latex', title = "Results", label = "tab:summary", flip=T)

@@ -43,4 +43,3 @@ sse_precise=apply(error_precise, 1, function(x) sum(x^2))
 results= as.data.frame(cbind(sse_precise, sse_naive, sse_bca_naive, sse_bca))
 save(results, error_bca, error_bca_naive, error_naive, error_precise, file = "Results/Results.RData")
 #stargazer::stargazer(results, type='latex', title = "Results", flip=T)
-
