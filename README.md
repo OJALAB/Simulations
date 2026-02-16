@@ -7,3 +7,5 @@ Bias corrected estimator - compares efficiency of the bca and bcm estimators fro
 Upgraded bca estimator - compares bca estimator from the article above with its improved version that is valid even in case of non-balanced occuring of measurement error. Both estimators are compared to a naive estimator that does not corrects measurement error at all and precise one that uses precisely measured data.
 
 Combining probability and nonprobability samplings - repeating simulation from an article 'Combining non-probability and probability survey samples through mass imputation' but with data containing measurement error.
+
+GLM bca estimators - measures efficiency of the bca estimator adapted to work in generalised linear models
